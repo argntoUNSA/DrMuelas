@@ -22,6 +22,7 @@ public class Pruebas {
 //			Prueba Clase SistemaPaciente
 			Scanner scan=new Scanner(System.in);
 			String u,c,car;
+//			int vId;
 			SistemaPaciente miSistema=new SistemaPaciente();
 //			System.out.println("Usuario: ");
 //		    u=scan.next();
@@ -34,8 +35,25 @@ public class Pruebas {
 			System.out.println("Contrasenia: ");
 			c=scan.next();
 			miSistema.iniciarSesion(u,c);
-			System.out.println(miSistema.toString());
+//			System.out.println(miSistema.toString());
 			
+//			miSistema.mostrarTurnosDisponibles();
+//			System.out.println("Ingrese numero de turno: ");
+//		    vId=scan.nextInt();
+//			miSistema.solicitarTurno(vId);
+			
+//			miSistema.mostrarTurnosReservados();
+			
+//			System.out.println("Prueba diferencia de fechas");
+//			System.out.println(miSistema.calculaDiferencia(LocalDate.now(), LocalDate.of(2022, Month.JULY, 8)));
+//			
+			
+			System.out.println("Prueba cancelar Turno reservado");
+			int id,opcion;
+			miSistema.mostrarTurnosReservados();
+			System.out.println("Ingrese nro del turno que desea cancelar");
+			opcion=scan.nextInt();
+			miSistema.cancelarTurno(opcion);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

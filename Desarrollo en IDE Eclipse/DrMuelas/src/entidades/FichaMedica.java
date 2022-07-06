@@ -48,17 +48,17 @@ public class FichaMedica {
 	public String toString() {
 		String cadena="";
 
-		cadena+="\nID \t DNI \t nombre \t apellido \t edad \t peso \t talla \t fechaNacimiento \t alergias \t tratamientos\n";
+		cadena+="ID\tDNI\tnombre\tapellido\tedad\tpeso\ttalla\tfechaNacimiento\talergias\ttratamientos\n";
 		cadena+=this.getId();
-		cadena+='\t'+this.getDNI();
-		cadena+='\t'+this.getNombre();
-		cadena+='\t'+this.getApellido();
-		cadena+='\t'+this.getEdad();
-		cadena+='\t'+this.getPeso();
-		cadena+='\t'+this.getTalla();
-		cadena+='\t'+this.getFechaNacimiento();
-		cadena+='\t'+this.getAlergias();
-		cadena+='\t'+this.getTratamientos();
+		cadena+=" \t "+this.getDNI();
+		cadena+=" \t "+this.getNombre();
+		cadena+=" \t "+this.getApellido();
+		cadena+=" \t "+this.getEdad();
+		cadena+=" \t "+this.getPeso();
+		cadena+=" \t "+this.getTalla();
+		cadena+=" \t "+this.getFechaNacimiento();
+		cadena+=" \t "+this.getAlergias();
+		cadena+=" \t "+this.getTratamientos();
 		
 		return cadena;
 		
