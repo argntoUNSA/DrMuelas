@@ -16,7 +16,9 @@ public class Paciente {
 		setFechaRegistro(vFechaRegistro);
 		setActivo(vActivo);
 	}
-	
+	public Paciente(int vId,String vUsuario) {
+		this(vId,vUsuario,"",null,true);
+	}
 	//Setters
 	public void setActivo(boolean vActivo) {this.activo=vActivo;}
 	private void setFechaRegistro(LocalDate vFechaRegistro) {this.fechaRegistro=vFechaRegistro;}

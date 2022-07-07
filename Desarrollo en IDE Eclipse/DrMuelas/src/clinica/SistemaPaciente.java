@@ -19,8 +19,7 @@ public class SistemaPaciente {
 		limpiarHistorial();
 		}
 	
-	
-	
+		
 	
 //	metodos solicitados
 	public void registrarse(String vUsuario,String vContrasenia){
@@ -186,7 +185,9 @@ public class SistemaPaciente {
 			System.out.println("Primero Iniciar sesion");
 		}
 	}
-	
+	public void mostrarFichaMedica() {
+		System.out.println(this.getFichaMedica().toString());
+	}
 	
 //	metodos adicionales
 	public int calculaDiferencia(LocalDate fechaA,LocalDate fechaB){
