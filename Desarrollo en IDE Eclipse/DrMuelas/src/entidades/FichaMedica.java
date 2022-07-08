@@ -1,26 +1,26 @@
 package entidades;
-
-import java.util.Date;
-
 public class FichaMedica {
 	private int id,edad;
 	private long DNI;
 	private String nombre,apellido,alergias,tratamientos,fechaNacimiento;
 	private double peso,talla;
+	private boolean activo;
 	
-//	public FichaMedica(int vId,long vDNI,String vNombre,String vApellido,int vEdad,String vFechaNacimiento,double vPeso,double vTalla,String vAlergias,String vTratamientos) {
-	public FichaMedica(int vId,long vDNI,String vNombre,String vApellido,int vEdad,double vPeso,double vTalla,String vAlergias,String vTratamientos) {
+	public FichaMedica(int vId,long vDNI,String vFechaNacimiento,String vNombre,String vApellido,int vEdad,double vPeso,double vTalla,String vAlergias,String vTratamientos,boolean vActivo) {
+//	public FichaMedica(int vId,long vDNI,String vNombre,String vApellido,int vEdad,double vPeso,double vTalla,String vAlergias,String vTratamientos) {
 		setId(vId);
 		setDNI(vDNI);
+		setFechaNacimiento(vFechaNacimiento);
 		setNombre(vNombre);
 		setApellido(vApellido);
 		setEdad(vEdad);
-//		setFechaNacimiento(vFechaNacimiento);
 		setPeso(vPeso);
 		setTalla(vTalla);
 		setAlergias(vAlergias);
 		setTratamientos(vTratamientos);
+		setActivo(vActivo);
 	}
+	public FichaMedica(int vId,long vDNI) {this(vId,vDNI,"","","",0,0.0,0.0,"","",true);}	
 	//Setters
 	public void setId(int id) {this.id = id;}
 	public void setDNI(long vDNI) {this.DNI = vDNI;}
@@ -32,7 +32,7 @@ public class FichaMedica {
 	public void setTalla(double talla) {this.talla = talla;}
 	public void setAlergias(String alergias) {this.alergias = alergias;}
 	public void setTratamientos(String tratamientos) {this.tratamientos = tratamientos;}
-	
+	public void setActivo(boolean vActivo) {this.activo=vActivo;}
 	//Getters
 	public int getId() {return this.id;}
 	public long 	getDNI()			{return this.DNI;}	
@@ -44,6 +44,7 @@ public class FichaMedica {
 	public String 	getFechaNacimiento(){return fechaNacimiento;}
 	public double 	getPeso()			{return peso;}
 	public double 	getTalla()			{return talla;}
+	public boolean 	isActivo()			{return this.activo;}
 	
 	public String toString() {
 		String cadena="";

@@ -323,7 +323,7 @@ public class SistemaPaciente {
 			conn.conectar();
 			Statement stmt,stmtAux;
 			ResultSet rs,rsAux;
-			String sql,estado,fecha;
+			String sql,estado,fecha,sector;
 			Turno aux;
 			int idPaciente,id;
 			limpiarHistorial();
@@ -339,7 +339,8 @@ public class SistemaPaciente {
 				rsAux.next();
 				estado=(rsAux.getString("estado"));
 				fecha=(rsAux.getDate("diaYHora").toLocalDate().toString());
-				aux=new Turno(id,fecha,estado);
+				sector=rs.getString("sector");
+				aux=new Turno(id,fecha,estado,sector);
 				this.getHistorial().put(String.valueOf(id),aux);
 				
 			}
