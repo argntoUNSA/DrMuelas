@@ -20,9 +20,10 @@ create table fichaMedica(
 create table paciente(
 	id int,
     idFicha int,
+    sector varchar(15),
 	usuario varchar(15),
 	contrasenia varchar(15),
-    fechaCreacion datetime,
+    fechaCreacion date,
     activo boolean,
 	primary key (id),
     foreign key (idFicha) references FichaMedica(id)
@@ -30,8 +31,8 @@ create table paciente(
 create table turno(
 	id int,
     idPaciente int,
-    diayHoraSolicitado datetime,
-	diaYHoraDelTurno datetime,
+    diaSolicitado date,
+	diaDelTurno date,
 	estado varchar(10),
     sector varchar(15),
 	activo boolean,

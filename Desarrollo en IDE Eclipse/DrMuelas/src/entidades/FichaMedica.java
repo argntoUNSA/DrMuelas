@@ -1,4 +1,7 @@
 package entidades;
+
+import java.time.LocalDate;
+
 public class FichaMedica {
 	private int id,edad;
 	private long DNI;
@@ -20,7 +23,7 @@ public class FichaMedica {
 		setTratamientos(vTratamientos);
 		setActivo(vActivo);
 	}
-	public FichaMedica(int vId,long vDNI) {this(vId,vDNI,"","","",0,0.0,0.0,"","",true);}	
+	public FichaMedica(int vId,long vDNI) {this(vId,vDNI,LocalDate.now().toString(),"","",0,0.0,0.0,"","",true);}	
 	//Setters
 	public void setId(int id) {this.id = id;}
 	public void setDNI(long vDNI) {this.DNI = vDNI;}
@@ -49,10 +52,11 @@ public class FichaMedica {
 	public String toString() {
 		String cadena="";
 
-		cadena+="ID\tDNI\tnombre\tapellido\tedad\tpeso\ttalla\tfechaNacimiento\talergias\ttratamientos\n";
+		cadena+="ID\tDNI\tfechaNacimiento\t\tnombre\tapellido\tedad\tpeso\ttalla\tfechaNacimiento\talergias\ttratamientos\n";
 		cadena+=this.getId();
 		cadena+=" \t "+this.getDNI();
-		cadena+=" \t "+this.getNombre();
+		cadena+=" \t "+this.getFechaNacimiento();
+		cadena+=" \t\t "+this.getNombre();
 		cadena+=" \t "+this.getApellido();
 		cadena+=" \t "+this.getEdad();
 		cadena+=" \t "+this.getPeso();

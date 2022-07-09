@@ -1,9 +1,7 @@
 package clinica;
 import utilidades.Conexion;
 import entidades.*;
-import java.util.ArrayList;
 import java.sql.*;
-import java.util.Date;
 import java.util.HashMap;
 import java.time.*;
 
@@ -11,34 +9,33 @@ import java.time.*;
 public class SistemaPaciente {
 	private Paciente paciente;
 	private FichaMedica ficha;
-	private HashMap<String,Turno> historial;
+	private HashMap<Integer,Turno> historial,turnosDisponibles;
+	
+	private final String USER,PASS,BDD;
 	
 	public SistemaPaciente(){
 		limpiarFicha();
 		limpiarPaciente();
 		limpiarHistorial();
+		limpiarTurnosDisponibles();
+		USER="root";
+		PASS="Ssap4toor0t0!";
+		BDD="dr_muelas";
 		}
 	
-		
-	
+
 //	metodos solicitados
 	public void registrarse(String vUsuario,String vContrasenia){
 		try{
-			Conexion conn = new Conexion("dr_muelas","root","Ssap4toor0t0!");
+			Conexion conn = new Conexion(BDD,USER,PASS);
 			System.out.println(conn.conectar());
 			String sql;
 			Statement stmt;
 			ResultSet rs;
 			int vId;
-//			Paciente nuevoPaciente;
-//			LocalDate vFecha;
-//		    primero solicito su nombre de usuario y contraseña
-
+//		    primero solicito su usuario y contraseña
 			stmt=conn.getConnection().createStatement();
-
 		    System.out.println("Inicio de Registro");
-//		    Pido usuario
-		    	
 			System.out.println("Se ingreso este usuario: "+vUsuario);
 //			reviso los datos almacenados previamente
 			sql="select usuario from paciente where usuario=\'"+vUsuario+"\';";
@@ -69,26 +66,26 @@ public class SistemaPaciente {
 		}
 	public void iniciarSesion(String vUsuario,String vContrasenia){
 		try{
-		  Conexion conn = new Conexion("dr_muelas","root","Ssap4toor0t0!");
-		  conn.conectar();
-		  String sql;
-		  Statement stmt;
-		  ResultSet rs;
+			Conexion conn = new Conexion(BDD,USER,PASS);
+			conn.conectar();
+			String sql;
+			Statement stmt;
+			ResultSet rs;
 		  
-		  sql="select id, usuario, contraseña from paciente where usuario=\'"+vUsuario+"\';";
-		  stmt=conn.getConnection().createStatement();
-		  rs=stmt.executeQuery(sql);
+			sql="select id, usuario, contraseña from paciente where usuario=\'"+vUsuario+"\';";
+			stmt=conn.getConnection().createStatement();
+			rs=stmt.executeQuery(sql);
 		  
-		  if(rs.next()&& vContrasenia.compareTo(rs.getString("contraseña"))==0){
-		    cargarPaciente(rs.getString("usuario"));
-		    cargarFicha(rs.getInt("id"));
-		    cargarHistorial();
-		    System.out.println("Inicio  de Sesion completado");
-		  }
-		  else{
+			if(rs.next()&& vContrasenia.compareTo(rs.getString("contraseña"))==0){
+				cargarPaciente(rs.getString("usuario"));
+				cargarFicha(rs.getInt("id"));
+				cargarHistorial();
+				System.out.println("Inicio  de Sesion completado");
+			}	
+			else{
 			  System.out.println("Los datos ingresados no son correctos o la cuenta esta inactiva");
-		  }
-		  conn.desconectar();
+			}
+			conn.desconectar();
 		}
 		catch(Exception e){
 			e.printStackTrace();
@@ -96,80 +93,56 @@ public class SistemaPaciente {
 		  
 		}
 	public void solicitarTurno(int vId) {
-		Conexion conn = new Conexion("dr_muelas","root","Ssap4toor0t0!");
-		conn.conectar();
-		String sql,fecha;
-		Statement stmt;
-		ResultSet rs;
-		int id,idPaciente,idTurno;
-		try {
-			if(this.getPaciente()!=null) {
-				stmt=conn.getConnection().createStatement();
-				sql="select diaYHora from turno where id="+vId+";";
-				rs=stmt.executeQuery(sql);
-				if(rs.next()) {
-					System.out.println("nro ingresado del turno que se reservara: "+vId);
-					idTurno=vId;
-					idPaciente=this.getPaciente().getId();
-					fecha=rs.getDate("diaYHora").toString();
-
-					sql="select id from turno_asignado_paciente order by id DESC;";
-					rs=stmt.executeQuery(sql);
-					if(rs.next()) {
-						id=rs.getInt("id")+1;
-					}
-					else{
-						id=1;
-					}
-					sql="update turno set estado=\'Reservado\' where id="+idTurno+";";
-					stmt.executeUpdate(sql);
-					
-					sql="insert into turno_asignado_paciente values ("+id+","+idPaciente+","+idTurno+",\'"+fecha+"\');";
-					stmt.executeUpdate(sql);
-					
+		int idPaciente;
+		Turno miTurno;
+		if(this.getPaciente()!=null) {
+			if(this.getTurnosDisponibles().size()>0) {
+				System.out.println("nro ingresado del turno que se reservara: "+vId);
+				idPaciente=this.getPaciente().getId();
+				if(this.getTurnosDisponibles().containsKey(vId)) {
+					miTurno=this.getTurnosDisponibles().get(vId);
+					miTurno.setEstado("Reservado");
+					miTurno.setIdPaciente(idPaciente);
+					miTurno.setDiaSolicitado(LocalDate.now().toString());
+					this.getHistorial().put(miTurno.getId(),miTurno);
 					System.out.println("reserva finalizada con exito");
-					
 				}
 				else {
-					System.out.println("No se encontro turno disponible con el numero ingresado");
+					System.out.println("No se encontro turno con ese numero");
 				}
+				
 			}
 			else {
-				System.out.println("Primero inicie sesion");
+				System.out.println("No hay turnos disponibles");
 			}
 		}
-		catch(Exception e) {
-			e.printStackTrace();
+		else {
+			System.out.println("Primero inicie sesion");
 		}
 	}
-	public void cancelarTurno(int id) {
+	public void cancelarTurno(int vId) {
 		if(this.getPaciente()!=null) {
 			if(this.getHistorial().size()>0) {
 				try {
-					Conexion conn;
-					Statement stmt;
-					String sql;
-					Turno turno;
-					LocalDate fechaActual,fechaTurno;
+					
+					Turno miTurno;
+					String fechaActual,fechaTurno;
 					int diferencia;
 					
 					
-					turno=this.getHistorial().get(String.valueOf(id));
-					fechaActual=LocalDate.now();
-					fechaTurno=LocalDate.parse(turno.getFechaHora());
-					diferencia=calculaDiferencia(fechaActual,fechaTurno);
-					conn=new Conexion("dr_muelas","root","Ssap4toor0t0!");
-					conn.conectar();
-					 
+					miTurno=this.getHistorial().get(vId);
+					fechaActual=LocalDate.now().toString();
+					fechaTurno=miTurno.getDiaDelTurno();
+					
+					diferencia=calculaDiferencia(LocalDate.parse(fechaActual),LocalDate.parse(fechaTurno));
 					if(diferencia>=1) {
-						this.getHistorial().get(String.valueOf(id)).setEstado("Cancelado");
-						stmt=conn.getConnection().createStatement();
-						sql="update turno set estado=\'Cancelado\' where id="+id+";";
-						stmt.executeUpdate(sql);
+						miTurno=this.getHistorial().get(vId);
+						miTurno.setEstado("Cancelado");
+						
 						System.out.println("Se cancelo correctamente");
 					}
 					else {
-						System.out.println("No se puede cancelar");
+						System.out.println("No se puede cancelar, faltan menos de 24 hs");
 					}
 				}
 				catch(Exception e){
@@ -186,7 +159,12 @@ public class SistemaPaciente {
 		}
 	}
 	public void mostrarFichaMedica() {
-		System.out.println(this.getFichaMedica().toString());
+		if(this.getPaciente()!=null) {
+			System.out.println(this.getFichaMedica().toString());
+		}
+		else {
+			System.out.println("Primero inicie sesion");
+		}
 	}
 	
 //	metodos adicionales
@@ -219,49 +197,41 @@ public class SistemaPaciente {
 		}
 	}
 	public void mostrarTurnosDisponibles() {
-		Conexion conn = new Conexion("dr_muelas","root","Ssap4toor0t0!");
-		conn.conectar();
-		String sql;
-		Statement stmt;
-		ResultSet rs;
-		int i;
-		LocalDate fecha;
-		try {
-			sql="select id, diaYHora from turno where estado=\'Disponible\';";
-			stmt=conn.getConnection().createStatement();
-			rs=stmt.executeQuery(sql);
-			System.out.println("Nro\tfecha");
-			while(rs.next()) {
-				i=rs.getInt("id");
-				fecha=rs.getDate("diaYHora").toLocalDate();
-				System.out.println(i+"\t"+fecha);
+		int cantidad;
+		if(this.getPaciente()!=null) {
+			cantidad=this.getTurnosDisponibles().size();
+			if(cantidad>0) {
+				System.out.println("\nNro\tfecha");
+				for(Turno turnoLeido:this.getTurnosDisponibles().values()) {
+					System.out.println("\n"+turnoLeido.getId()+"\t"+turnoLeido.getDiaDelTurno());
+				}
+			}
+			else {
+				System.out.println("No hay turnos disponibles");
 			}
 		}
-		catch(Exception e) {
-			e.printStackTrace();
-			if(conn!=null) conn.desconectar();
+		else {
+			System.out.println("Primero inicie sesion");
 		}
 	}
 	public void cargarPaciente(String vUsuario){
 		try {
-			Conexion conn=new Conexion("dr_muelas","root","Ssap4toor0t0!");
+			Conexion conn = new Conexion(BDD,USER,PASS);
 			conn.conectar();
 			Statement stmt=conn.getConnection().createStatement();
 			ResultSet rs;
-			String sql;
-	  
+			String sql,fecha;
+			int id,idFicha;
 			sql="select * from paciente where usuario=\'"+vUsuario+"\';";
 			rs=stmt.executeQuery(sql);
 			rs.next();
-			//creo variables utiles
-			int id;
-//			LocalDate fecha;
-			//le asigno valor a esas variables
+		
+//			le asigno valor a esas variables
 			id=rs.getInt("id");
-//			fecha=rs.getDate("fechaRegistro").toLocalDate();
+			idFicha=rs.getInt("idFicha");
+			fecha=rs.getDate("fechaRegistro").toLocalDate().toString();
 //			cargo al Paciente
-//			Paciente aux=new Paciente(id,this.getUsuario(),"",fecha,true);
-			Paciente aux=new Paciente(id,vUsuario,"",LocalDate.now(),true);
+			Paciente aux=new Paciente(id,idFicha,vUsuario,"",fecha,true);
 			
 			this.setPaciente(aux);
 			
@@ -282,22 +252,23 @@ public class SistemaPaciente {
 			rs=stmt.executeQuery(sql);
 			int id,edad;
 			long DNI;
-			String nombre,apellido,fechaCreacion,alergias,tratamientos;
+			String nombre,apellido,fechaNacimiento,alergias,tratamientos;
 			double peso,talla;
+			boolean activo;
 			FichaMedica aux;
 			if( rs.next()) {
 			  id=rs.getInt				("id");
 			  DNI=rs.getLong			("DNI");
+			  fechaNacimiento=rs.getDate	("fechaNacimietno").toLocalDate().toString();
 			  nombre=rs.getString		("nombre");
 			  apellido=rs.getString		("apellido");
 			  edad=rs.getInt			("edad");
 			  peso=rs.getDouble			("peso");
 			  talla=rs.getDouble		("talla");
-//			  fechaCreacion=rs.getDate	("fechaRegistro").toGMTString();
 			  alergias=(rs.getString	("alergias"));
 			  tratamientos=rs.getString	("tratamientos");
-//			  aux=new FichaMedica(id,DNI,nombre,apellido,edad,fechaCreacion,peso,talla,alergias,tratamientos);
-			  aux=new FichaMedica(id,DNI,nombre,apellido,edad,peso,talla,alergias,tratamientos);
+			  activo=rs.getBoolean("activo");
+			  aux=new FichaMedica(id,DNI,fechaNacimiento,nombre,apellido,edad,peso,talla,alergias,tratamientos,activo);
 			  
 			  setFichaMedica(aux);
 		  }
@@ -309,8 +280,7 @@ public class SistemaPaciente {
 				 id=rs.getInt("id")+1;
 			 else
 				 id=0;
-//			 aux=new FichaMedica(id,-1,"vacio","vacio",0,LocalDate.now().toString(),0.0,0.0,"vacio","vacio");
-			 aux=new FichaMedica(id,-1,"vacio","vacio",0,0.0,0.0,"vacio","vacio");
+			 aux=new FichaMedica(id,-1,"vacio","vacio","vacio",0,0.0,0.0,"vacio","vacio",true);
 			 setFichaMedica(aux);
 			 
 		  }
@@ -319,29 +289,30 @@ public class SistemaPaciente {
 	}
 	public void cargarHistorial(){
 		try {
-			Conexion conn=new Conexion("dr_muelas","root","Ssap4toor0t0!");
+			Conexion conn = new Conexion(BDD,USER,PASS);
 			conn.conectar();
-			Statement stmt,stmtAux;
-			ResultSet rs,rsAux;
-			String sql,estado,fecha,sector;
+			Statement stmt;
+			ResultSet rs;
+			String sql,estado,fechaSolicitado,fechaTurno,sector;
 			Turno aux;
 			int idPaciente,id;
+			boolean activo;
+			
 			limpiarHistorial();
 			idPaciente=this.getPaciente().getId();
-			sql="select * from turno_asignado_paciente where idPaciente="+idPaciente+";";
+			sql="select * from turno where idPaciente="+idPaciente+";";
 			stmt=conn.getConnection().createStatement();
 			rs=stmt.executeQuery(sql);
 			while(rs.next()){
-				id=(rs.getInt("idTurno"));
-				sql="select * from turno where id="+id+";";
-				stmtAux=conn.getConnection().createStatement();
-				rsAux=stmtAux.executeQuery(sql);
-				rsAux.next();
-				estado=(rsAux.getString("estado"));
-				fecha=(rsAux.getDate("diaYHora").toLocalDate().toString());
+				id=(rs.getInt("id"));
+				idPaciente=rs.getInt("idPaciente");
+				fechaSolicitado=(rs.getDate("diayHoraSolicitado").toLocalDate().toString());
+				fechaTurno=rs.getDate("diaYHoraDelTurno").toLocalDate().toString();
+				estado=(rs.getString("estado"));
 				sector=rs.getString("sector");
-				aux=new Turno(id,fecha,estado,sector);
-				this.getHistorial().put(String.valueOf(id),aux);
+				activo=rs.getBoolean("activo");
+				aux=new Turno(id,idPaciente,fechaSolicitado,fechaTurno,estado,sector,activo);
+				this.getHistorial().put(id,aux);
 				
 			}
 		}
@@ -353,10 +324,15 @@ public class SistemaPaciente {
 	private void setFichaMedica(FichaMedica fm) {this.ficha=fm;}
 	private Paciente getPaciente() {return this.paciente;}
 	private FichaMedica getFichaMedica() {return this.ficha;}
-	private HashMap<String,Turno> getHistorial() {return this.historial;}
-	private void limpiarHistorial() {this.historial=new HashMap<String,Turno>();}
+	private HashMap<Integer,Turno> getHistorial() {return this.historial;}
+	private HashMap<Integer, Turno> getTurnosDisponibles() {return this.turnosDisponibles;}
+	private void limpiarHistorial() {this.historial=new HashMap<Integer,Turno>();}
 	private void limpiarPaciente() {this.paciente=null;}
 	private void limpiarFicha() {this.ficha=null;}
+	private void limpiarTurnosDisponibles() {this.turnosDisponibles=new HashMap<Integer,Turno>();}
+
+	
+	
 	public String toString() {
 		String cad="";
 		if(this.getPaciente()!=null) {
@@ -366,6 +342,189 @@ public class SistemaPaciente {
 		}
 		return cad;
 		
+	}
+
+
+	public void escribirDatos() {
+		escribirPaciente();
+		escribirFicha();
+		escribirTurnos();
+		
+	}
+
+
+	private void escribirTurnos() {
+		
+		if(this.getPaciente()!=null) {
+			Conexion conn;
+			String sql,estado;
+			Statement stmt;
+			int idPaciente;
+			LocalDate fechaSolicitado;
+			try {	
+				conn = new Conexion(BDD,USER,PASS);
+				System.out.println(conn.conectar());
+				stmt=conn.getConnection().createStatement();
+				
+				for(Turno turno:this.getHistorial().values()) {
+					idPaciente=turno.getIdPaciente();
+					fechaSolicitado=LocalDate.parse(turno.getDiaSolicitado());
+					estado=turno.getEstado();
+					
+					sql="update turno"
+							+ " set idPaciente="+idPaciente
+							+ " where id="+turno.getId()+";";
+					stmt.executeUpdate(sql);
+					
+					sql="update turno"
+							+ " set diaSolicitado="+fechaSolicitado
+							+ " where id="+turno.getId()+";";
+					stmt.executeUpdate(sql);
+					
+					sql="update turno"
+							+ " set estado="+estado
+							+ " where id="+turno.getId()+";";
+					stmt.executeUpdate(sql);
+				}
+			}
+			catch(Exception e) {
+				System.err.print("Error al escribirTurno");
+				e.printStackTrace();
+			}
+			
+		}
+		else {
+			System.out.println("Inicie sesion");
+		}
+		
+	}
+
+
+	private void escribirFicha() {
+		if(this.getPaciente()!=null) {
+			if(this.ficha!=null) {
+				Conexion conn;
+				String sql,nombre,apellido,alergias,tratamientos;
+				LocalDate fechaNacimiento;
+				Statement stmt;
+				int id,edad;
+				FichaMedica ficha;
+				long DNI;
+				double peso,talla;
+				
+				try {
+					conn = new Conexion(BDD,USER,PASS);
+					System.out.println(conn.conectar());
+					
+					ficha=this.getFichaMedica();
+					id=ficha.getId();
+					DNI=ficha.getDNI();
+					fechaNacimiento=LocalDate.parse(ficha.getFechaNacimiento());
+					nombre=ficha.getNombre();
+					apellido=ficha.getApellido();
+					edad=ficha.getEdad();
+					peso=ficha.getPeso();
+					talla=ficha.getTalla();
+					alergias=ficha.getAlergias();
+					tratamientos=ficha.getTratamientos();
+					
+					stmt=conn.getConnection().createStatement();
+					
+					sql="update fichaMedica set DNI="+DNI
+							+ " where id="+id+";";
+					stmt.executeUpdate(sql);
+					sql="update fichaMedica set fechaNacimiento="+fechaNacimiento
+							+ " where id="+id+";";
+					stmt.executeUpdate(sql);
+					sql="update fichaMedica set nombre="+nombre+""
+							+ " where id="+id+";";
+					stmt.executeUpdate(sql);
+					sql="update fichaMedica set apellido="+apellido+""
+							+ " where id="+id+";";
+					stmt.executeUpdate(sql);
+					sql="update fichaMedica set edad="+edad+""
+							+ " where id="+id+";";
+					stmt.executeUpdate(sql);
+					sql="update fichaMedica set peso="+peso+""
+							+ " where id="+id+";";
+					stmt.executeUpdate(sql);
+					sql="update fichaMedica set talla="+talla+""
+							+ " where id="+id+";";
+					stmt.executeUpdate(sql);
+					sql="update fichaMedica set alergias="+alergias+""
+							+ " where id="+id+";";
+					stmt.executeUpdate(sql);
+					sql="update fichaMedica set tratamientos="+tratamientos+""
+							+ " where id="+id+";";
+					stmt.executeUpdate(sql);
+				}
+				catch(Exception e) {
+					System.err.print("Error al escribir ficha medica");
+					e.printStackTrace();
+				}
+				
+			}
+			else {
+				System.out.println("No hay ficha para cargar");
+			}
+			
+		}
+		else {
+			System.out.println("Inicie sesion");
+		}
+		
+	}
+
+
+	private void escribirPaciente() {
+		if(this.getPaciente()!=null) {
+			Conexion conn;
+			String sql,usuario,contrasenia;
+			Statement stmt;
+			int id,idFicha;
+			LocalDate fechaCreacion;
+			Paciente paciente;
+			boolean activo;
+			try {
+				paciente=this.getPaciente();
+				conn=new Conexion(BDD, USER, PASS);
+				System.out.println(conn.conectar());
+				
+				id=paciente.getId();
+				idFicha=paciente.getIdFicha();
+				usuario=paciente.getUsuario();
+				contrasenia=paciente.getContrasenia();
+				fechaCreacion=LocalDate.parse(paciente.getFechaCreacion());
+				
+				activo=paciente.isActivo();
+				
+				stmt=conn.getConnection().createStatement();
+				
+				sql="update paciente set idFicha="+idFicha
+						+ " where id="+id+";";
+				stmt.executeUpdate(sql);
+				sql="update paciente set usuario="+usuario
+						+ " where id="+id+";";
+				stmt.executeUpdate(sql);
+				sql="update paciente set contrasenia="+contrasenia
+						+ " where id="+id+";";
+				stmt.executeUpdate(sql);
+				sql="update paciente set fechaCreacion="+fechaCreacion
+						+ " where id="+id+";";
+				stmt.executeUpdate(sql);
+				sql="update paciente set activo="+activo
+						+ " where id="+id+";";
+				stmt.executeUpdate(sql);
+				
+				
+			}
+			catch(Exception e) {
+				System.err.print("Error al escribir Paciente");
+			}
+		}
+		else {
+			System.out.println("Inicie sesion");
+		}
 	}
 }
 	

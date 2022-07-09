@@ -1,9 +1,11 @@
 package entidades;
+
+import java.time.LocalDate;
+
 public class Paciente {
 
 	private int id,idFicha;
-	private String usuario,contrasenia;
-	private String fechaCreacion;
+	private String usuario,contrasenia,sector,fechaCreacion;
 	private boolean activo;
 	
 	//Constructores
@@ -16,18 +18,20 @@ public class Paciente {
 		setActivo(vActivo);
 	}
 	public Paciente(int vId,int idFicha,String vUsuario) {
-		this(vId,idFicha,vUsuario,vUsuario,null,true);
+		this(vId,idFicha,vUsuario,vUsuario,LocalDate.now().toString(),true);
 	}
 	
 	//Gets y Sets
 	public void setId(int vId) {this.id=vId;}
 	public void setIdFicha(int idFicha) {this.idFicha = idFicha;}
+	public void setSector(String sector) {this.sector = sector;}
 	public void setUsuario(String vUsuario) {this.usuario=vUsuario;}
 	public void setFechacreacion(String vFechaCreacion) {this.fechaCreacion=vFechaCreacion;}
 	public void setActivo(boolean vActivo) {this.activo=vActivo;}
 	
 	public int getId() {return this.id;}
 	public int getIdFicha() {return idFicha;}
+	public String getSector() {return sector;}
 	public String getUsuario() {return this.usuario;}
 	public String getContrasenia() {return this.contrasenia;}
 	public String getFechaCreacion() {return this.fechaCreacion;}
@@ -46,6 +50,8 @@ public class Paciente {
 		return cadena;
 		
 	}
+	
+	
 	
 	
 }
