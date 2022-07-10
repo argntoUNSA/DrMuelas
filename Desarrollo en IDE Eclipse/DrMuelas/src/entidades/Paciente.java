@@ -1,6 +1,4 @@
-package entidades;
-
-import java.time.LocalDate;
+package entidades;;
 
 public class Paciente {
 
@@ -9,16 +7,17 @@ public class Paciente {
 	private boolean activo;
 	
 	//Constructores
-	public Paciente(int vId,int vIdFicha,String vUsuario,String vContrasenia,String vFechaCreacion,boolean vActivo) {
+	public Paciente(int vId,int vIdFicha,String vSector,String vUsuario,String vContrasenia,String vFechaCreacion,boolean vActivo) {
 		setId(vId);
 		setIdFicha(vIdFicha);
+		setSector(vSector);
 		setUsuario(vUsuario);
 		this.contrasenia=vContrasenia;
 		setFechacreacion(vFechaCreacion);
 		setActivo(vActivo);
 	}
-	public Paciente(int vId,int idFicha,String vUsuario) {
-		this(vId,idFicha,vUsuario,vUsuario,LocalDate.now().toString(),true);
+	public Paciente(int vId,int idFicha,String vSector,String vUsuario,String fecha) {
+		this(vId,idFicha,vSector,vUsuario,vUsuario,fecha.toString(),true);
 	}
 	
 	//Gets y Sets

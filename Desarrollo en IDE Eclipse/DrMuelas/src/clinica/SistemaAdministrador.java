@@ -2,7 +2,6 @@ package clinica;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import entidades.*;
@@ -19,11 +18,11 @@ public class SistemaAdministrador {
 		setListaFichasMedicas(new ArrayList<FichaMedica>());
 		setListaTurnos(new ArrayList<Turno>());
 		sestlistaEmergencia(new ArrayList<Turno>());
-		leerDatos();
+		iniciar();
 	}
 	
 //	Metodos requeridos
-	public void cargarPacienteEmergencia(long DNI) {
+	public void cargarPacienteEmergencia(long vDNI,String vNombre,String vApellido,String vFechaNaciemiento,Double vPeso,Double vTalla,String vAlergias,String vTratamientos) {
 		Paciente nuevoPaciente,ultimoPaciente;
 		FichaMedica nuevaFicha,ultimaFicha;
 		Turno nuevoTurno,ultimoTurno;
@@ -40,7 +39,7 @@ public class SistemaAdministrador {
 		else {
 			idFicha=1;
 		}
-		nuevaFicha=new FichaMedica(idFicha,DNI);
+		nuevaFicha=new FichaMedica(idFicha,vDNI,vFechaNaciemiento,vNombre,vApellido,vPeso,vTalla,vAlergias,vTratamientos);
 		this.getListaFichasMedicas().add(nuevaFicha);
 		
 		if(!this.getListaPacientes().isEmpty()) {
@@ -51,8 +50,8 @@ public class SistemaAdministrador {
 		else {
 			idPaciente=1;
 		}
-		usuario=String.valueOf(DNI);
-		nuevoPaciente=new Paciente(idPaciente,idFicha,usuario);
+		usuario=String.valueOf(vDNI);
+		nuevoPaciente=new Paciente(idPaciente,idFicha,"Emergencia",usuario,LocalDate.now().toString());
 		this.getListaPacientes().add(nuevoPaciente);
 		
 		if(!this.getListaTurnosEmergencia().isEmpty()) {
@@ -95,7 +94,7 @@ public class SistemaAdministrador {
 	public void informes(int mesInforme) {
 //		Definimos
 		Turno turnoLeido;
-		int cantidadSector1,cantidadSector2,cantidadSector3,cantidadTotalTurnos,mesTurno;
+		int cantidadSector1,cantidadSector2,cantidadSector3,cantidadTotalTurnos,mesTurno,anioActual,diaActual;
 		LocalDate fecha;
 	
 //		Calculamos
@@ -104,8 +103,10 @@ public class SistemaAdministrador {
 		for(int i=0;i<cantidadTotalTurnos;i++) {
 			turnoLeido=this.getListaTurnos().get(i);
 			fecha=LocalDate.parse(turnoLeido.getDiaDelTurno());
+			anioActual=LocalDate.now().getYear();
 			mesTurno=fecha.getMonthValue();
-			if(mesInforme==mesTurno && !turnoLeido.isActivo()) {
+			diaActual=LocalDate.now().getDayOfMonth();
+			if(turnoLeido.isActivo() && mesInforme==mesTurno && fecha.getYear()==anioActual && fecha.getDayOfMonth()<diaActual) {
 				switch(turnoLeido.getSector()) {
 				case "Primero":{
 					cantidadSector1++;
@@ -134,7 +135,7 @@ public class SistemaAdministrador {
 
 
 //	Metodos Adicionales
-	public void leerDatos() {
+	public void iniciar() {
 		System.out.println("Leyendo Pacientes");
 		cargarPacientes();
 		System.out.println("Leyendo Fichas");
@@ -145,15 +146,16 @@ public class SistemaAdministrador {
 	public void cargarPacientes() {
 		try {
 			Conexion conn;
-			String sql,usuario;
+			String sql,usuario,sector,fecha;
 			Statement stmt;
 			ResultSet rs;
 			Paciente pacienteLeido=null;		
 			int id,idFicha;
+			boolean activo;
 			
 			conn = new Conexion(BDD,USER,PASS);
 			conn.conectar();
-			sql="select id,idFicha,usuario from paciente;";
+			sql="select * from paciente;";
 			stmt=conn.getConnection().createStatement();
 			rs=stmt.executeQuery(sql);
 			
@@ -161,7 +163,10 @@ public class SistemaAdministrador {
 				id=rs.getInt("id");
 				idFicha=rs.getInt("idFicha");
 				usuario=rs.getString("usuario");
-				pacienteLeido=new Paciente(id,idFicha,usuario);
+				sector=rs.getString("sector");
+				fecha=rs.getDate("fechaCreacion").toLocalDate().toString();
+				activo=rs.getBoolean("activo");
+				pacienteLeido=new Paciente(id,idFicha,sector,usuario,rs.getString("contrasenia"),fecha,activo);
 				cargarUnPaciente(pacienteLeido);
 			}
 			
@@ -174,8 +179,7 @@ public class SistemaAdministrador {
 	}
 	public void cargarFichas() {
 		try {
-			Conexion conn = new Conexion("dr_muelas","root","Ssap4toor0t0!");
-			conn.conectar();
+			Conexion conn;
 			String sql,fechaNacimiento,nombre,apellido,alergias,tratamientos;
 			Statement stmt;
 			ResultSet rs;
@@ -185,13 +189,15 @@ public class SistemaAdministrador {
 			FichaMedica fichaLeido;
 			boolean activo;
 			
+			conn = new Conexion(BDD,USER,PASS);
+			conn.conectar();
 			sql="select * from fichaMedica;";
 			stmt=conn.getConnection().createStatement();
 			rs=stmt.executeQuery(sql);
 			while(rs.next()) {
 				id=rs.getInt			("id");
 				DNI=rs.getLong			("DNI");
-				fechaNacimiento=rs.getTime("fechaNacimiento").toString();
+				fechaNacimiento=rs.getDate("fechaNacimiento").toString();
 				nombre=rs.getString		("nombre");
 				apellido=rs.getString	("apellido");
 				edad=rs.getInt			("edad");
@@ -249,7 +255,7 @@ public class SistemaAdministrador {
 	public void cargarUnPaciente(Paciente elemento) {this.getListaPacientes().add(elemento);}
 	public void cargarUnaFicha(FichaMedica elemento) {this.getListaFichasMedicas().add(elemento);}
 	public void cargarUnTurno(Turno elemento) {this.getListaTurnos().add(elemento);}
-	public void escribirDatos() {
+	public void salir() {
 		System.out.println("Escribiendo Fichas");
 		volcarFichas();
 		System.out.println("Escribiendo Pacientes");

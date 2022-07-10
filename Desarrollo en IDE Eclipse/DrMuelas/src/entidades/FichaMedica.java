@@ -23,7 +23,20 @@ public class FichaMedica {
 		setTratamientos(vTratamientos);
 		setActivo(vActivo);
 	}
-	public FichaMedica(int vId,long vDNI) {this(vId,vDNI,LocalDate.now().toString(),"","",0,0.0,0.0,"","",true);}	
+	public FichaMedica(int vId,long vDNI,String vFechaNacimiento,String vNombre,String vApellido,Double vPeso,Double vTalla,String vAlergias,String vTratamientos) {
+		
+		this(vId,vDNI,vFechaNacimiento,vNombre,vApellido,0,vPeso,vTalla,vAlergias,vTratamientos,true);
+		int edad;
+		edad=calculaEdad(vFechaNacimiento);
+		this.setEdad(edad);
+		
+	}
+	public int calculaEdad(String vFechaNacimiento) {
+		int dif=0;
+		LocalDate fechaN=LocalDate.parse(vFechaNacimiento);
+		dif=LocalDate.now().getYear()-fechaN.getYear();
+		return dif;
+	}
 	//Setters
 	public void setId(int id) {this.id = id;}
 	public void setDNI(long vDNI) {this.DNI = vDNI;}
@@ -52,7 +65,7 @@ public class FichaMedica {
 	public String toString() {
 		String cadena="";
 
-		cadena+="ID\tDNI\tfechaNacimiento\t\tnombre\tapellido\tedad\tpeso\ttalla\tfechaNacimiento\talergias\ttratamientos\n";
+		cadena+="Ficha Nro\tDNI\tFecha Nacimiento\tNombre\tApellido\tEdad\tPeso\tTalla\tAlergias\tTratamientos\n";
 		cadena+=this.getId();
 		cadena+=" \t "+this.getDNI();
 		cadena+=" \t "+this.getFechaNacimiento();
@@ -61,7 +74,6 @@ public class FichaMedica {
 		cadena+=" \t "+this.getEdad();
 		cadena+=" \t "+this.getPeso();
 		cadena+=" \t "+this.getTalla();
-		cadena+=" \t "+this.getFechaNacimiento();
 		cadena+=" \t "+this.getAlergias();
 		cadena+=" \t "+this.getTratamientos();
 		

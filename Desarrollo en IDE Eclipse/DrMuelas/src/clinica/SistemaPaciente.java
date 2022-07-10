@@ -9,15 +9,15 @@ import java.time.*;
 public class SistemaPaciente {
 	private Paciente paciente;
 	private FichaMedica ficha;
-	private HashMap<Integer,Turno> historial,turnosDisponibles;
-	
+	private HashMap<Integer,Turno> historial,turnosReservados;
+
 	private final String USER,PASS,BDD;
 	
 	public SistemaPaciente(){
 		limpiarFicha();
 		limpiarPaciente();
 		limpiarHistorial();
-		limpiarTurnosDisponibles();
+		limpiarTurnosReservados();
 		USER="root";
 		PASS="Ssap4toor0t0!";
 		BDD="dr_muelas";
@@ -25,46 +25,71 @@ public class SistemaPaciente {
 	
 
 //	metodos solicitados
-	public void registrarse(String vUsuario,String vContrasenia){
+	public void registrarse(String vUsuario,String vContrasenia,long vDNI,String vFechaNacimiento,String vNombre,String vApellido,Double vPeso,Double vTalla,String vAlergias,String vTratamientos){
 		try{
-			Conexion conn = new Conexion(BDD,USER,PASS);
-			System.out.println(conn.conectar());
-			String sql;
+			Conexion conn;
+			String sql,sector,fecha;
 			Statement stmt;
 			ResultSet rs;
-			int vId;
+			int id,idFicha,edad;
+			FichaMedica ficha;
+			
+			conn = new Conexion(BDD,USER,PASS);
+			conn.conectar();
+			
 //		    primero solicito su usuario y contraseña
 			stmt=conn.getConnection().createStatement();
-		    System.out.println("Inicio de Registro");
-			System.out.println("Se ingreso este usuario: "+vUsuario);
 //			reviso los datos almacenados previamente
 			sql="select usuario from paciente where usuario=\'"+vUsuario+"\';";
 			rs=stmt.executeQuery(sql);
 			if(!rs.next()){//Si no existe tal usuario...
 //				Se ingresa nuevo usuario a la BDD
-				sql="select id from paciente order by DESC;";
+				sql="select id from paciente order by id DESC;";
 				rs=stmt.executeQuery(sql);
 				if(rs.next()) {
-					vId=rs.getInt("Id")+1;
+					id=rs.getInt("Id")+1;
 				}
-				else vId=1;
-//				vFecha=LocalDate.now();    	
-//				Creamos e  insertamos el objeto paciente
-				sql="insert into paciente values ("+vId+","+vUsuario+","+vContrasenia+");";
+				else id=1;
+				
+				sql="select id from fichaMedica order by id DESC;";
+				rs=stmt.executeQuery(sql);
+				if(rs.next()) {
+					idFicha=rs.getInt("Id")+1;
+				}
+				else idFicha=1;
+				
+				ficha=new FichaMedica(idFicha,vDNI,vFechaNacimiento,vNombre, vApellido, vPeso, vTalla, vAlergias, vTratamientos);
+				edad=ficha.getEdad();
+				sql="insert into fichaMedica values ("+idFicha+","+vDNI+",\'"+vFechaNacimiento+"\',\'"+vNombre+"\',\'"+vApellido+"\',"+edad+","+vPeso+","+vTalla+",\'"+vAlergias+"\',\'"+vTratamientos+"\',"+true+");";
 				stmt.executeUpdate(sql);
-				System.out.println("Registro completado");
+			
+				if(edad>=3 && edad<=12) {
+					sector="Primero";
+				}
+				else if (edad>12) {
+					sector="Segundo";
+				}
+				else {
+					sector="Vacio";
+					System.out.println("Error al asignar sector");
+				}
+				
+				fecha=LocalDate.now().toString();    	
+//				Creamos e  insertamos el objeto paciente
+				sql="insert into paciente values ("+id+","+idFicha+",\'"+sector+"\',\'"+vUsuario+"\',\'"+vContrasenia+"\',\'"+fecha+"\',"+true+");";
+				stmt.executeUpdate(sql);
 			
 		    }
 		    else{
 		    	System.out.println("Ya existe tal usuario ingrese otro");
 		    }
-		    System.out.println("Fin de Registro");
 		 }
 		 catch(Exception e){
-		   e.printStackTrace();
+			 System.err.print("Error al registrarse\n");
+			 e.printStackTrace();
 		   }
 		}
-	public void iniciarSesion(String vUsuario,String vContrasenia){
+	public boolean iniciarSesion(String vUsuario,String vContrasenia){
 		try{
 			Conexion conn = new Conexion(BDD,USER,PASS);
 			conn.conectar();
@@ -72,48 +97,71 @@ public class SistemaPaciente {
 			Statement stmt;
 			ResultSet rs;
 		  
-			sql="select id, usuario, contraseña from paciente where usuario=\'"+vUsuario+"\';";
+			sql="select id, usuario, contrasenia from paciente where usuario=\'"+vUsuario+"\';";
 			stmt=conn.getConnection().createStatement();
 			rs=stmt.executeQuery(sql);
 		  
-			if(rs.next()&& vContrasenia.compareTo(rs.getString("contraseña"))==0){
+			if(rs.next()&& vContrasenia.compareTo(rs.getString("contrasenia"))==0){
+				System.out.println("Leyendo paciente");
 				cargarPaciente(rs.getString("usuario"));
+				System.out.println("Leyendo Ficha");
 				cargarFicha(rs.getInt("id"));
+				System.out.println("Leyendo Historial");
 				cargarHistorial();
-				System.out.println("Inicio  de Sesion completado");
+				return true;
 			}	
 			else{
 			  System.out.println("Los datos ingresados no son correctos o la cuenta esta inactiva");
+			  return false;
 			}
-			conn.desconectar();
 		}
 		catch(Exception e){
 			e.printStackTrace();
+			return false;
 		}
 		  
 		}
-	public void solicitarTurno(int vId) {
-		int idPaciente;
+	public void solicitarTurno(int dia) {
+		int id,idPaciente,anio,mes;
+		String diaSolicitado,estado,sector,sql,diaTurno;
 		Turno miTurno;
-		if(this.getPaciente()!=null) {
-			if(this.getTurnosDisponibles().size()>0) {
-				System.out.println("nro ingresado del turno que se reservara: "+vId);
+		Conexion conn;
+		Statement stmt;
+		ResultSet rs;
+		LocalDate fechaActual=LocalDate.now(); 
+		anio=fechaActual.getYear();
+		mes=fechaActual.getMonthValue();
+		if(this.getPaciente()!=null && this.diaDisponible(dia)) {
+			try {
 				idPaciente=this.getPaciente().getId();
-				if(this.getTurnosDisponibles().containsKey(vId)) {
-					miTurno=this.getTurnosDisponibles().get(vId);
-					miTurno.setEstado("Reservado");
-					miTurno.setIdPaciente(idPaciente);
-					miTurno.setDiaSolicitado(LocalDate.now().toString());
-					this.getHistorial().put(miTurno.getId(),miTurno);
-					System.out.println("reserva finalizada con exito");
+				diaSolicitado=fechaActual.toString();
+//				diaTurno=LocalDate.parse(diaTurno).toString();
+				diaTurno=LocalDate.of(anio, mes, dia).toString();
+				estado="Reservado";
+				sector=this.getPaciente().getSector();
+				
+				conn=new Conexion(BDD, USER, PASS);
+				conn.conectar();
+				sql="select id from turno order by id DESC;";
+				stmt=conn.getConnection().createStatement();
+				rs=stmt.executeQuery(sql);
+				if(rs.next()) {
+					id=rs.getInt("id")+1;
 				}
 				else {
-					System.out.println("No se encontro turno con ese numero");
+					id=1;
 				}
+				miTurno=new Turno(id,idPaciente,diaSolicitado,diaTurno,estado,sector,true);
+				this.getTurnosReservados().put(id, miTurno);
+				this.getHistorial().put(id,miTurno);
 				
+				sql="insert into turno values("+id+","+idPaciente+",\'"+diaSolicitado+"\',\'"+diaTurno+"\',\'"+estado+"\',\'"+sector+"\',"+true+");";
+				stmt=conn.getConnection().createStatement();
+				stmt.executeUpdate(sql);
 			}
-			else {
-				System.out.println("No hay turnos disponibles");
+			catch(Exception e) {
+				System.err.print("Error al solicitar turno\n");
+				e.printStackTrace();
 			}
 		}
 		else {
@@ -122,7 +170,7 @@ public class SistemaPaciente {
 	}
 	public void cancelarTurno(int vId) {
 		if(this.getPaciente()!=null) {
-			if(this.getHistorial().size()>0) {
+			if(!this.getTurnosReservados().isEmpty() && this.getTurnosReservados().containsKey(vId)) {
 				try {
 					
 					Turno miTurno;
@@ -138,8 +186,11 @@ public class SistemaPaciente {
 					if(diferencia>=1) {
 						miTurno=this.getHistorial().get(vId);
 						miTurno.setEstado("Cancelado");
+						miTurno.setActivo(false);
+						this.getTurnosReservados().remove(miTurno.getId());
 						
 						System.out.println("Se cancelo correctamente");
+						
 					}
 					else {
 						System.out.println("No se puede cancelar, faltan menos de 24 hs");
@@ -151,7 +202,7 @@ public class SistemaPaciente {
 				
 			}
 			else {
-				System.out.println("No hay turnos reservados");
+				System.out.println("No hay turnos reservados o el turno elegido no existe");
 			}
 		}
 		else {
@@ -181,46 +232,44 @@ public class SistemaPaciente {
 	} 
 	public void mostrarTurnosReservados(){
 		if(this.getPaciente()!=null) {
-			if(this.getHistorial().size()>0) {
-				System.out.println(this.getHistorial());
-				for(Turno elemento:this.getHistorial().values()) {
-					if(elemento.getEstado().compareTo("Reservado")==0)
-						System.out.println("["+elemento.toString()+"]");
+			if(!this.getTurnosReservados().isEmpty()) {
+				for(Turno elemento:this.getTurnosReservados().values()) {
+					System.out.println("["+elemento.toString()+"]");
 				}
 			}
 			else {
-				System.out.println("Historial vacio");
+				System.out.println("No hay turnos reservados");
 			}
 		}
 		else {
 			System.out.println("Primero inicie sesion");
 		}
 	}
-	public void mostrarTurnosDisponibles() {
-		int cantidad;
-		if(this.getPaciente()!=null) {
-			cantidad=this.getTurnosDisponibles().size();
-			if(cantidad>0) {
-				System.out.println("\nNro\tfecha");
-				for(Turno turnoLeido:this.getTurnosDisponibles().values()) {
-					System.out.println("\n"+turnoLeido.getId()+"\t"+turnoLeido.getDiaDelTurno());
-				}
-			}
-			else {
-				System.out.println("No hay turnos disponibles");
-			}
-		}
-		else {
-			System.out.println("Primero inicie sesion");
-		}
-	}
+//	public void mostrarTurnosDisponibles() {
+//		int cantidad;
+//		if(this.getPaciente()!=null) {
+//			cantidad=this.getTurnosReservados().size();
+//			if(cantidad>0) {
+//				System.out.println("\nNro\tfecha");
+//				for(Turno turnoLeido:this.getTurnosReservados().values()) {
+//					System.out.println("\n"+turnoLeido.getId()+"\t"+turnoLeido.getDiaDelTurno());
+//				}
+//			}
+//			else {
+//				System.out.println("No hay turnos disponibles");
+//			}
+//		}
+//		else {
+//			System.out.println("Primero inicie sesion");
+//		}
+//	}
 	public void cargarPaciente(String vUsuario){
 		try {
 			Conexion conn = new Conexion(BDD,USER,PASS);
 			conn.conectar();
 			Statement stmt=conn.getConnection().createStatement();
 			ResultSet rs;
-			String sql,fecha;
+			String sql,fecha,sector;
 			int id,idFicha;
 			sql="select * from paciente where usuario=\'"+vUsuario+"\';";
 			rs=stmt.executeQuery(sql);
@@ -229,9 +278,10 @@ public class SistemaPaciente {
 //			le asigno valor a esas variables
 			id=rs.getInt("id");
 			idFicha=rs.getInt("idFicha");
-			fecha=rs.getDate("fechaRegistro").toLocalDate().toString();
+			sector=rs.getString("sector");
+			fecha=rs.getDate("fechaCreacion").toLocalDate().toString();
 //			cargo al Paciente
-			Paciente aux=new Paciente(id,idFicha,vUsuario,"",fecha,true);
+			Paciente aux=new Paciente(id,idFicha,sector,vUsuario,rs.getString("contrasenia"),fecha,true);
 			
 			this.setPaciente(aux);
 			
@@ -259,7 +309,7 @@ public class SistemaPaciente {
 			if( rs.next()) {
 			  id=rs.getInt				("id");
 			  DNI=rs.getLong			("DNI");
-			  fechaNacimiento=rs.getDate	("fechaNacimietno").toLocalDate().toString();
+			  fechaNacimiento=rs.getDate	("fechaNacimiento").toLocalDate().toString();
 			  nombre=rs.getString		("nombre");
 			  apellido=rs.getString		("apellido");
 			  edad=rs.getInt			("edad");
@@ -294,7 +344,7 @@ public class SistemaPaciente {
 			Statement stmt;
 			ResultSet rs;
 			String sql,estado,fechaSolicitado,fechaTurno,sector;
-			Turno aux;
+			Turno miTurno;
 			int idPaciente,id;
 			boolean activo;
 			
@@ -306,13 +356,16 @@ public class SistemaPaciente {
 			while(rs.next()){
 				id=(rs.getInt("id"));
 				idPaciente=rs.getInt("idPaciente");
-				fechaSolicitado=(rs.getDate("diayHoraSolicitado").toLocalDate().toString());
-				fechaTurno=rs.getDate("diaYHoraDelTurno").toLocalDate().toString();
+				fechaSolicitado=(rs.getDate("diaSolicitado").toLocalDate().toString());
+				fechaTurno=rs.getDate("diaDelTurno").toLocalDate().toString();
 				estado=(rs.getString("estado"));
 				sector=rs.getString("sector");
 				activo=rs.getBoolean("activo");
-				aux=new Turno(id,idPaciente,fechaSolicitado,fechaTurno,estado,sector,activo);
-				this.getHistorial().put(id,aux);
+				miTurno=new Turno(id,idPaciente,fechaSolicitado,fechaTurno,estado,sector,activo);
+				this.getHistorial().put(id,miTurno);
+				if(estado.compareTo("Reservado")==0 || activo) {
+					this.getTurnosReservados().put(id,miTurno);
+				}
 				
 			}
 		}
@@ -325,11 +378,11 @@ public class SistemaPaciente {
 	private Paciente getPaciente() {return this.paciente;}
 	private FichaMedica getFichaMedica() {return this.ficha;}
 	private HashMap<Integer,Turno> getHistorial() {return this.historial;}
-	private HashMap<Integer, Turno> getTurnosDisponibles() {return this.turnosDisponibles;}
+	public HashMap<Integer, Turno> getTurnosReservados() {return this.turnosReservados;}
 	private void limpiarHistorial() {this.historial=new HashMap<Integer,Turno>();}
 	private void limpiarPaciente() {this.paciente=null;}
 	private void limpiarFicha() {this.ficha=null;}
-	private void limpiarTurnosDisponibles() {this.turnosDisponibles=new HashMap<Integer,Turno>();}
+	private void limpiarTurnosReservados() {this.turnosReservados=new HashMap<Integer,Turno>();}
 
 	
 	
@@ -345,9 +398,9 @@ public class SistemaPaciente {
 	}
 
 
-	public void escribirDatos() {
-		escribirPaciente();
+	public void salir() {
 		escribirFicha();
+		escribirPaciente();
 		escribirTurnos();
 		
 	}
@@ -357,34 +410,51 @@ public class SistemaPaciente {
 		
 		if(this.getPaciente()!=null) {
 			Conexion conn;
-			String sql,estado;
+			String sql,estado,fechaSolicitado,fechaTurno,sector;
 			Statement stmt;
-			int idPaciente;
-			LocalDate fechaSolicitado;
+			ResultSet rs;
+			int id,idPaciente;
+			boolean activo;
+			
 			try {	
 				conn = new Conexion(BDD,USER,PASS);
-				System.out.println(conn.conectar());
-				stmt=conn.getConnection().createStatement();
+				conn.conectar();
 				
 				for(Turno turno:this.getHistorial().values()) {
+					id=turno.getId();
 					idPaciente=turno.getIdPaciente();
-					fechaSolicitado=LocalDate.parse(turno.getDiaSolicitado());
+					fechaSolicitado=turno.getDiaSolicitado();
+					fechaTurno=turno.getDiaDelTurno();
 					estado=turno.getEstado();
-					
-					sql="update turno"
-							+ " set idPaciente="+idPaciente
-							+ " where id="+turno.getId()+";";
-					stmt.executeUpdate(sql);
-					
-					sql="update turno"
-							+ " set diaSolicitado="+fechaSolicitado
-							+ " where id="+turno.getId()+";";
-					stmt.executeUpdate(sql);
-					
-					sql="update turno"
-							+ " set estado="+estado
-							+ " where id="+turno.getId()+";";
-					stmt.executeUpdate(sql);
+					sector=turno.getSector();
+					activo=turno.isActivo();
+					stmt=conn.getConnection().createStatement();
+						
+					sql="select id from turno where id="+id+";";
+					rs=stmt.executeQuery(sql);
+					if(!rs.next()) {
+						sql="insert into turno values("+id+","+idPaciente+",\'"+fechaSolicitado+"\',\'"+fechaTurno+"\',\'"+estado+"\',\'"+sector+"\',"+activo+");";
+						stmt=conn.getConnection().createStatement();
+						stmt.executeUpdate(sql);
+					}
+					else {
+//						sql="update turno set id="+activo+" where id="+id+";";
+//						stmt.executeUpdate(sql);
+						
+						sql="update turno set idPaciente="+idPaciente+" where id="+id+";";
+						stmt.executeUpdate(sql);
+						sql="update turno set diaSolicitado=\'"+fechaSolicitado+"\' where id="+id+";";
+						stmt.executeUpdate(sql);
+						sql="update turno set diaDelTurno=\'"+fechaTurno+"\' where id="+id+";";
+						stmt.executeUpdate(sql);
+						sql="update turno set estado=\'"+estado+"\' where id="+id+";";
+						stmt.executeUpdate(sql);
+						sql="update turno set sector=\'"+sector+"\' where id="+id+";";
+						stmt.executeUpdate(sql);
+						sql="update turno set activo="+activo+" where id="+id+";";
+						stmt.executeUpdate(sql);
+					}
+				
 				}
 			}
 			catch(Exception e) {
@@ -392,9 +462,6 @@ public class SistemaPaciente {
 				e.printStackTrace();
 			}
 			
-		}
-		else {
-			System.out.println("Inicie sesion");
 		}
 		
 	}
@@ -414,7 +481,7 @@ public class SistemaPaciente {
 				
 				try {
 					conn = new Conexion(BDD,USER,PASS);
-					System.out.println(conn.conectar());
+					conn.conectar();
 					
 					ficha=this.getFichaMedica();
 					id=ficha.getId();
@@ -433,13 +500,13 @@ public class SistemaPaciente {
 					sql="update fichaMedica set DNI="+DNI
 							+ " where id="+id+";";
 					stmt.executeUpdate(sql);
-					sql="update fichaMedica set fechaNacimiento="+fechaNacimiento
+					sql="update fichaMedica set fechaNacimiento=\'"+fechaNacimiento
+							+ "\' where id="+id+";";
+					stmt.executeUpdate(sql);
+					sql="update fichaMedica set nombre=\'"+nombre+"\'"
 							+ " where id="+id+";";
 					stmt.executeUpdate(sql);
-					sql="update fichaMedica set nombre="+nombre+""
-							+ " where id="+id+";";
-					stmt.executeUpdate(sql);
-					sql="update fichaMedica set apellido="+apellido+""
+					sql="update fichaMedica set apellido=\'"+apellido+"\'"
 							+ " where id="+id+";";
 					stmt.executeUpdate(sql);
 					sql="update fichaMedica set edad="+edad+""
@@ -451,10 +518,10 @@ public class SistemaPaciente {
 					sql="update fichaMedica set talla="+talla+""
 							+ " where id="+id+";";
 					stmt.executeUpdate(sql);
-					sql="update fichaMedica set alergias="+alergias+""
+					sql="update fichaMedica set alergias=\'"+alergias+"\'"
 							+ " where id="+id+";";
 					stmt.executeUpdate(sql);
-					sql="update fichaMedica set tratamientos="+tratamientos+""
+					sql="update fichaMedica set tratamientos=\'"+tratamientos+"\'"
 							+ " where id="+id+";";
 					stmt.executeUpdate(sql);
 				}
@@ -468,9 +535,6 @@ public class SistemaPaciente {
 				System.out.println("No hay ficha para cargar");
 			}
 			
-		}
-		else {
-			System.out.println("Inicie sesion");
 		}
 		
 	}
@@ -488,7 +552,7 @@ public class SistemaPaciente {
 			try {
 				paciente=this.getPaciente();
 				conn=new Conexion(BDD, USER, PASS);
-				System.out.println(conn.conectar());
+				conn.conectar();
 				
 				id=paciente.getId();
 				idFicha=paciente.getIdFicha();
@@ -503,14 +567,14 @@ public class SistemaPaciente {
 				sql="update paciente set idFicha="+idFicha
 						+ " where id="+id+";";
 				stmt.executeUpdate(sql);
-				sql="update paciente set usuario="+usuario
-						+ " where id="+id+";";
+				sql="update paciente set usuario=\'"+usuario
+						+ "\' where id="+id+";";
 				stmt.executeUpdate(sql);
-				sql="update paciente set contrasenia="+contrasenia
-						+ " where id="+id+";";
+				sql="update paciente set contrasenia=\'"+contrasenia
+						+ "\' where id="+id+";";
 				stmt.executeUpdate(sql);
-				sql="update paciente set fechaCreacion="+fechaCreacion
-						+ " where id="+id+";";
+				sql="update paciente set fechaCreacion=\'"+fechaCreacion
+						+ "\' where id="+id+";";
 				stmt.executeUpdate(sql);
 				sql="update paciente set activo="+activo
 						+ " where id="+id+";";
@@ -522,9 +586,21 @@ public class SistemaPaciente {
 				System.err.print("Error al escribir Paciente");
 			}
 		}
-		else {
-			System.out.println("Inicie sesion");
+	}
+
+	public boolean diaDisponible(int dia) {
+		int diaTurnoReservado;
+		if(this.getPaciente()!=null) {
+			if(!this.getTurnosReservados().isEmpty()) {
+				for(Turno turnoLeido:this.getTurnosReservados().values()) {
+					diaTurnoReservado=LocalDate.parse(turnoLeido.getDiaDelTurno()).getDayOfMonth();
+					if(dia==diaTurnoReservado)
+						return false;
+					
+				}
+			}
 		}
+		return true;
 	}
 }
 	
