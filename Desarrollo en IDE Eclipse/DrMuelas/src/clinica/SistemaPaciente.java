@@ -158,6 +158,7 @@ public class SistemaPaciente {
 				sql="insert into turno values("+id+","+idPaciente+",\'"+diaSolicitado+"\',\'"+diaTurno+"\',\'"+estado+"\',\'"+sector+"\',"+true+");";
 				stmt=conn.getConnection().createStatement();
 				stmt.executeUpdate(sql);
+				System.out.println("Se solicito turno nro: "+id);
 			}
 			catch(Exception e) {
 				System.err.print("Error al solicitar turno\n");
@@ -165,7 +166,12 @@ public class SistemaPaciente {
 			}
 		}
 		else {
-			System.out.println("Primero inicie sesion");
+			if(this.getPaciente()!=null) {
+				System.out.println("Primero inicie sesion");				
+			}
+			else {
+				System.out.println("Dia no disponible");	
+			}
 		}
 	}
 	public void cancelarTurno(int vId) {
@@ -197,18 +203,25 @@ public class SistemaPaciente {
 					}
 				}
 				catch(Exception e){
+					System.out.println("Error al Cancelar turno");
 					e.printStackTrace();
 				}
 				
 			}
 			else {
-				System.out.println("No hay turnos reservados o el turno elegido no existe");
+				if(!this.getTurnosReservados().isEmpty()) {
+					System.out.println("Elija turno valido ");
+				}
+				else {
+					System.out.println("No hay turnos reservados");
+				}
 			}
 		}
 		else {
 			System.out.println("Primero Iniciar sesion");
 		}
 	}
+	
 	public void mostrarFichaMedica() {
 		if(this.getPaciente()!=null) {
 			System.out.println(this.getFichaMedica().toString());
@@ -245,24 +258,7 @@ public class SistemaPaciente {
 			System.out.println("Primero inicie sesion");
 		}
 	}
-//	public void mostrarTurnosDisponibles() {
-//		int cantidad;
-//		if(this.getPaciente()!=null) {
-//			cantidad=this.getTurnosReservados().size();
-//			if(cantidad>0) {
-//				System.out.println("\nNro\tfecha");
-//				for(Turno turnoLeido:this.getTurnosReservados().values()) {
-//					System.out.println("\n"+turnoLeido.getId()+"\t"+turnoLeido.getDiaDelTurno());
-//				}
-//			}
-//			else {
-//				System.out.println("No hay turnos disponibles");
-//			}
-//		}
-//		else {
-//			System.out.println("Primero inicie sesion");
-//		}
-//	}
+
 	public void cargarPaciente(String vUsuario){
 		try {
 			Conexion conn = new Conexion(BDD,USER,PASS);
@@ -415,7 +411,9 @@ public class SistemaPaciente {
 			ResultSet rs;
 			int id,idPaciente;
 			boolean activo;
+			LocalDate diaActual,diaTurno;
 			
+			diaActual=LocalDate.now();
 			try {	
 				conn = new Conexion(BDD,USER,PASS);
 				conn.conectar();
@@ -425,10 +423,18 @@ public class SistemaPaciente {
 					idPaciente=turno.getIdPaciente();
 					fechaSolicitado=turno.getDiaSolicitado();
 					fechaTurno=turno.getDiaDelTurno();
-					estado=turno.getEstado();
 					sector=turno.getSector();
-					activo=turno.isActivo();
 					stmt=conn.getConnection().createStatement();
+					diaTurno=LocalDate.parse(fechaTurno);
+					if(diaActual.compareTo(diaTurno)>0 && turno.isActivo()) {
+						estado="Atendido";
+						activo=false;
+					}
+					else {
+						estado=turno.getEstado();
+						activo=turno.isActivo();
+					}
+					
 						
 					sql="select id from turno where id="+id+";";
 					rs=stmt.executeQuery(sql);
@@ -465,7 +471,11 @@ public class SistemaPaciente {
 		}
 		
 	}
-
+	
+	
+	
+	
+	
 
 	private void escribirFicha() {
 		if(this.getPaciente()!=null) {
@@ -602,6 +612,25 @@ public class SistemaPaciente {
 		}
 		return true;
 	}
+
+//	public void mostrarTurnosDisponibles() {
+//	int cantidad;
+//	if(this.getPaciente()!=null) {
+//		cantidad=this.getTurnosReservados().size();
+//		if(cantidad>0) {
+//			System.out.println("\nNro\tfecha");
+//			for(Turno turnoLeido:this.getTurnosReservados().values()) {
+//				System.out.println("\n"+turnoLeido.getId()+"\t"+turnoLeido.getDiaDelTurno());
+//			}
+//		}
+//		else {
+//			System.out.println("No hay turnos disponibles");
+//		}
+//	}
+//	else {
+//		System.out.println("Primero inicie sesion");
+//	}
+//}
 }
 	
 	

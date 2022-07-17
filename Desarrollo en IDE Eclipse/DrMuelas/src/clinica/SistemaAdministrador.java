@@ -233,17 +233,20 @@ public class SistemaAdministrador {
 			stmt=conn.getConnection().createStatement();
 			rs=stmt.executeQuery(sql);
 			while(rs.next()){
-				id=(rs.getInt("id"));
-				idPaciente=(rs.getInt("idPaciente"));
-				fechaSolicitado=rs.getDate("diaSolicitado").toString();
-				fechaTurno=rs.getDate("diaDelTurno").toString();
-				estado=rs.getString("estado");
-				sector=rs.getString("sector");
 				activo=rs.getBoolean("activo");
-				turnoLeido=new Turno(id, idPaciente , fechaSolicitado, fechaTurno, estado, sector, activo);
-				this.cargarUnTurno(turnoLeido);
-				if(sector.compareTo("Emergencia")==0 && estado.compareTo("Reservado")==0) {
-					this.getListaTurnosEmergencia().add(turnoLeido);
+					
+				if(activo) {
+					id=(rs.getInt("id"));
+					idPaciente=(rs.getInt("idPaciente"));
+					fechaSolicitado=rs.getDate("diaSolicitado").toString();
+					fechaTurno=rs.getDate("diaDelTurno").toString();
+					estado=rs.getString("estado");
+					sector=rs.getString("sector");
+					turnoLeido=new Turno(id, idPaciente , fechaSolicitado, fechaTurno, estado, sector, activo);
+					this.cargarUnTurno(turnoLeido);
+					if(sector.compareTo("Emergencia")==0) {
+						this.getListaTurnosEmergencia().add(turnoLeido);
+					}
 				}
 			}
 		}
@@ -338,13 +341,14 @@ public class SistemaAdministrador {
 				Statement stmt;
 				ResultSet rs;
 				String sql;
-				
+				LocalDate fechaActual,fechaTurno;
 				Turno turnoLeido=null;		
 				int id;
 				
 				conn = new Conexion(BDD,USER,PASS);
 				conn.conectar();
 				stmt=conn.getConnection().createStatement();
+				fechaActual=LocalDate.now();
 				for(int i=0;i<total;i++) {
 					turnoLeido=this.getListaTurnos().get(i);
 					id=turnoLeido.getId();
@@ -352,6 +356,13 @@ public class SistemaAdministrador {
 					sql="select * from  turno where id="+id+";";
 					rs=stmt.executeQuery(sql);
 					if(!rs.next()) {
+						fechaTurno=LocalDate.parse(turnoLeido.getDiaDelTurno());
+						if(fechaActual.compareTo(fechaTurno)>0) {
+							atenderTurno(i);
+//							Supuestamente atiende como para no considerar aun los ausentes
+//							Se podria refinar controlando el horario actuarl si es que la 
+//							fecha es la misma. como para determinar si es o no ausencia
+						}
 						escribirTurno(turnoLeido);
 					}
 				}
@@ -362,6 +373,10 @@ public class SistemaAdministrador {
 			}
 			
 		}
+	}
+	private void atenderTurno(int i) {
+		this.getListaTurnos().get(i).setActivo(false);
+		this.getListaTurnos().get(i).setEstado("Atendido");
 	}
 	private void escribirPaciente(Paciente pacienteLeido) {
 		try {

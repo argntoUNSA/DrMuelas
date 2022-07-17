@@ -22,49 +22,63 @@ public class Principal {
 			opcion1=menuPrincipal();
 			if(opcion1==1) {
 				if (validar() ){
-					System.out.println("Iniciando Sistema Administrador");
+					System.out.println("\nIniciando Sistema Administrador");
 					miSistemaAdministrador=new SistemaAdministrador();
 					System.out.println("Sistema Administrador Iniciado");
 					do {
 						opcion2=menuAdministrador();
 						switch(opcion2) {
 						case 1:{
+							System.out.println("\n\tInicia proceso de registro");
 							String nombre,apellido,alergias,descripcion,fecha;
 							Double peso,talla;
-							System.out.print("Ingrese DNI: ");
+							System.out.print("\tIngrese sus datos: ");
+							System.out.print("\tDNI: ");
 							DNI=scan.nextLong();
-							System.out.print("Ingrese Nombre: ");
+							System.out.print("\tNombre: ");
 							nombre=scan.next();
-							System.out.print("Ingrese Apellido: ");
+							System.out.print("\tApellido: ");
 							apellido=scan.next();
-							System.out.print("Ingrese Fecha Nacimiento: ");
+							System.out.print("\tFecha Nacimiento (aaaa-mm-dd): ");
 							fecha=scan.next();
-							System.out.print("Ingrese Peso: ");
+							System.out.print("\tPeso: ");
 							peso=scan.nextDouble();
-							System.out.print("Ingrese Talla: ");
+							System.out.print("\tTalla: ");
 							talla=scan.nextDouble();
-							System.out.print("Ingrese Alergias: ");
+							System.out.print("\tAlergias: ");
 							alergias=scan.next();
-							System.out.print("Ingrese descripcion: ");
+							System.out.print("\tTratamientos: ");
 							descripcion=scan.next();
+							System.out.println("\tIngreso de datos finalizado");
 							miSistemaAdministrador.cargarPacienteEmergencia(DNI,nombre,apellido,fecha,peso,talla,alergias,descripcion);
+							System.out.println("\tFin de proceso de registro");
 							
 							break;
 						}
 						case 2:{
+							System.out.println("\n\tInicia muestra de Fichas Medicas");
 							miSistemaAdministrador.ListarFichasMedicas();
+							System.out.println("\tFinaliza muestra de Fichas Medicas");
+							
 							break;
 						}
 						case 3:{
-							System.out.print("Ingrese Mes: ");
+							System.out.println("\n\tInicia muestra de Informe");
 							mesInforme=menuMes();
-							miSistemaAdministrador.informes(mesInforme);
+							if(mesInforme!=0) {
+								miSistemaAdministrador.informes(mesInforme);
+								System.out.println("\tFinaliza muestra de Informes");
+							}
+							else{
+								System.out.println("Operacion cancelada");
+							}
+						
 							break;
 						}
 						case 0:{
-							System.out.println("Cerrando sistema Administrador");
+							System.out.println("\n\tCerrando sistema Administrador");
 							miSistemaAdministrador.salir();
-							System.out.println("Sistema Administrador cerrado");
+							System.out.println("\tSistema Administrador cerrado");
 							
 							break;
 						}
@@ -76,49 +90,50 @@ public class Principal {
 			}
 			else if(opcion1==2){
 				
-				System.out.println("Iniciando Sistema Paciente");
+				System.out.println("\nInician Sistema Paciente");
 				miSistemaPaciente=new SistemaPaciente();
 				System.out.println("Sistema Paciente Iniciado");
 				do {
 					opcion2=menu1Paciente();
 					switch(opcion2) {
 					case 1:{
+						System.out.println("\nInicia proceso de Registro");
 						String nombre,apellido,alergias,tratamientos,fecha;
 						Double peso,talla;
 						System.out.println("Ingrese sus datos:");
-						System.out.print("Usuario: ");
+						System.out.print("\tUsuario: ");
 						usuario=scan.next();
-						System.out.print("Contrasenia: ");
+						System.out.print("\tContrasenia: ");
 						contrasenia=scan.next();
-						System.out.print("Nombre: ");
+						System.out.print("\tNombre: ");
 						nombre=scan.next();
-						System.out.print("Apellido: ");
+						System.out.print("\tApellido: ");
 						apellido=scan.next();
-						System.out.print("DNI: ");
+						System.out.print("\tDNI: ");
 						DNI=scan.nextLong();
-						System.out.print("Fecha Nac (aaaa-mm-dd): ");
+						System.out.print("\tFecha Nac (aaaa-mm-dd): ");
 						fecha=scan.next();
-						System.out.print("Peso: ");
+						System.out.print("\tPeso: ");
 						peso=scan.nextDouble();
-						System.out.print("Talla: ");
+						System.out.print("\tTalla: ");
 						talla=scan.nextDouble();
-						System.out.print("Alergias: ");
-						alergias=scan.next();
-						System.out.print("Tratamientos: ");
-						tratamientos=scan.next();
+						System.out.print("\tAlergias: ");
+						alergias=scan.nextLine();
+						System.out.print("\tTratamientos: ");
+						tratamientos=scan.nextLine();
 						
-						System.out.println("Se esta registrando, espere por favor");
+						System.out.println("\nSe esta registrando, espere por favor");
 						miSistemaPaciente.registrarse(usuario, contrasenia,DNI,fecha,nombre,apellido,peso,talla,alergias,tratamientos);
-						System.out.println("Registro completado");
+						System.out.println("Finaliza proceso de Registro");
 						break;
 					}
 					case 2:{
-						System.out.print("Ingrese usuario: ");
+						System.out.print("\nIngrese usuario: ");
 						usuario=scan.next();
 						System.out.print("Ingrese contrasenia: ");
 						contrasenia=scan.next();
 						
-						System.out.println("Iniciando Sesion");
+						System.out.println("\nIniciando Sesion");
 						if(miSistemaPaciente.iniciarSesion(usuario, contrasenia)){
 							System.out.println("Sesion iniciada");
 							do {
@@ -127,36 +142,42 @@ public class Principal {
 								case 1:{
 									int diaTurno;
 									
-									System.out.println("Solicitando turno para este mes");
+									System.out.println("\n\t\tInicia Proceso de Solicitud");
 									diaTurno=menuFecha();
-									miSistemaPaciente.solicitarTurno(diaTurno);
-									System.out.println("Turno reservado");
-									
+									if(diaTurno!=0) {
+										miSistemaPaciente.solicitarTurno(diaTurno);
+										System.out.println("\t\tFinaliza proceso de Solicitud");
+										
+									}
+									else{
+										System.out.println("Operacion cancelada");
+									}
 									break;
 								}
 								case 2:{
+									System.out.println("\n\t\tInicia proceso de Cancelar");									
 									if(miSistemaPaciente.getTurnosReservados().size()>0) {
 										miSistemaPaciente.mostrarTurnosReservados();
-										System.out.print("Cancelar turno nro: ");
+										System.out.print("\t\tIngrese el nro de turno\n\t\t o 0(cero) para termianr el proceso ");
 										turno=scan.nextInt();
 										miSistemaPaciente.cancelarTurno(turno);
-										System.out.println("Turno Canelado");
 									}
 									else {
-										System.out.println("No hay turnos reservados");
+										System.out.println("\t\tNo hay turnos reservados");
 									}
+									System.out.println("\t\tFinaliza proceso de Cancelar");
 									break;
 								}
 								case 3:{
-									System.out.println("Se muestra ficha cargada: ");
+									System.out.println("\n\t\tInicia proceso Mostrar Ficha: ");
 									miSistemaPaciente.mostrarFichaMedica();
-									System.out.println("Fin de la muestra");
+									System.out.println("\t\tFinaliza proceso Mostrar Ficha");
 									break;
 								}
 								case 0:{
-									System.out.println("Cerrando Sesion");
+									System.out.println("\n\t\tCerrando Sesion");
 									miSistemaPaciente.salir();
-									System.out.println("Sesion cerrada ");
+									System.out.println("\t\tSesion cerrada ");
 									break;
 								}
 								}
@@ -169,7 +190,7 @@ public class Principal {
 						break;
 					}
 					case 0:{
-						System.out.println("Cerrando sistema Paciente");
+						System.out.println("\nCerrando sistema Paciente");
 						miSistemaPaciente.salir();
 						System.out.println("Sistema Paciente cerrado");
 						break;
@@ -209,13 +230,13 @@ public static int menu1Paciente(){
 	String cad;
 	Scanner scan;
 	   
-	cad="\n1- Registrarse";
-	cad+="\n2- Iniciar sesion";
-	cad+="\n0- Salir";
+	cad="\n\t1- Registrarse";
+	cad+="\n\t2- Iniciar sesion";
+	cad+="\n\t0- Salir";
 	scan=new Scanner(System.in);
 	do{
 		System.out.println(cad);
-		System.out.print("Ingrese opcion valida: ");
+		System.out.print("\tIngrese opcion valida: ");
 		opcion=scan.nextInt();
 	}
 	while(opcion<0 || opcion>4);
@@ -227,10 +248,10 @@ public static int menu2Paciente(){
 	String cad;
 	Scanner scan;
 	   
-	cad="\n1-	Solicitar Turno";
-	cad+="\n2-	Cancelar Turno";
-	cad+="\n3-	Mostrar Ficha Medica";
-	cad+="\n0-	Salir";
+	cad="\n\t1-	Solicitar Turno";
+	cad+="\n\t2-	Cancelar Turno";
+	cad+="\n\t3-	Mostrar Ficha Medica";
+	cad+="\n\t0-	Salir";
 	scan=new Scanner(System.in);
 	do{
 		System.out.println(cad);
@@ -247,14 +268,14 @@ public static int menuAdministrador(){
 	String cad;
 	Scanner scan;
 	   
-	cad="\n1- Cargar paciente sector emergencia";
-	cad+="\n2- Listar fichas medicas";
-	cad+="\n3- Mostrar informes";
-	cad+="\n0- Salir";
+	cad="\n\t1-	Cargar paciente sector emergencia";
+	cad+="\n\t2-	Listar fichas medicas";
+	cad+="\n\t3-	Mostrar informes";
+	cad+="\n\t0-	Salir";
 	scan=new Scanner(System.in);
 	do{
 		System.out.println(cad);
-		System.out.print("Ingrese opcion valida: ");
+		System.out.print("\tIngrese opcion valida: ");
 		opcion=scan.nextInt();
 	}
 	while(opcion<0 || opcion>4);
@@ -269,25 +290,15 @@ public static int menuMes() {
 	int opcion;
 	String cad;
 	Scanner scan;
-	   
-	cad="\n1-	Enero";
-	cad+="\n2-	Febrero";
-	cad+="\n3-	Marzo";
-	cad+="\n4-	Abril";
-	cad+="\n5-	Mayo";
-	cad+="\n6-	Junio";
-	cad+="\n7-	Julio";
-	cad+="\n8-	Agosto";
-	cad+="\n9-	Septiembre";
-	cad+="\n10-	Octubre";
-	cad+="\n11-	Noviembre";
-	cad+="\n12-	Diciembre";
-	cad+="\n0-	Salir";
+	
+	cad="\n\t\tSe considera como entrada el numero del mes (1:Enero ...12:Diciembre):";
+	cad+="\n\t\tm- nro mes:";
+	cad+="\n\t\t0-	Salir";
 	
 	scan=new Scanner(System.in);
 	do{
 		System.out.println(cad);
-		System.out.print("Ingrese opcion valida: ");
+		System.out.print("\t\tIngrese opcion valida: ");
 		opcion=scan.nextInt();
 	}
 	while(opcion<0 || opcion>12);
@@ -299,28 +310,15 @@ public static int menuFecha() {
 	String cad;
 	Scanner scan;
 	int dia=LocalDate.now().getDayOfMonth();
-	LocalDate fechaActual;   
-	cad="\n1-	Lunes";
-	cad+="\n2-	Martes";
-	cad+="\n3-	Miercoles";
-	cad+="\n4-	Jueves";
-	cad+="\n5-	Viernes";
+	LocalDate fechaActual;
 	
-	cad="Ingrese dia ("+dia+"...30):";
+	cad="\t\tIngrese dia("+dia+"...30)\n\t\t o 0 (cero) para salir: ";
 	scan=new Scanner(System.in);
-		
-	
-//		do{
-//			System.out.println(cad);
-//			System.out.print("Ingrese opcion valida: ");
-//			opcion=scan.nextInt();
-//		}
-//		while(opcion<1 || opcion>5);
-//	 
+ 
 	do {
-		System.out.println(cad);
+		System.out.print(cad);
 		opcion=scan.nextInt();
-	}while(opcion<dia && opcion>30);
+	}while((opcion<dia && opcion!=0) || opcion>30);
     return opcion;
 }
 }
